@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="WARN" name="Project name">
+    <Properties>
+        <Property name="defaultPattern">[%highlight{%-5level}] %d{DEFAULT} %c{1}.%M() - %msg%n%throwable{short.lineNumber}</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%clr{%d{yyyy-MM-dd HH:mm:ss.SSS}}{faint} %clr{${LOG_LEVEL_PATTERN}} %clr{${sys:PID}}{magenta} %clr{---}{faint} %clr{[%15.15t]}{faint} %clr{%-40.40c{1.}}{cyan} %clr{:}{faint} %m%n${sys:LOG_EXCEPTION_CONVERSION_WORD}"/>
+        </Console>
+        <Socket name="socket" host="localhost" port="5044">
+            <!-- json used -->
+            <JsonLayout compact="true" eventEol="true" />
+            
+            <!-- <encoder charset="UTF-8" class="net.logstash.logback.encoder.LogstashEncoder"> -->
+                <!--添加applicationName字段-->
+                <!-- grok used -->
+                <!-- <customFields>{"applicationName":"${applicationName}"}</customFields>
+                <PatternLayout pattern="${defaultPattern}" /> -->
+            <!-- </encoder> -->
+        </Socket>
+    </Appenders>
+
+    <Loggers>
+        <!--Root level logger to control overall logging-->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="socket"/>
+        </Root>
+        <!--Logger for org.springframework.boot package-->
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="socket"/>
+        </Logger>
+        <!--Logger for org.apache.catalina package-->
+        <Logger name="org.apache.catalina" level="INFO" additivity="false">
+            <AppenderRef ref="socket"/>
+        </Logger>
+        <!--Logger for org.hibernate package-->
+        <Logger name="org.hibernate" level="INFO" additivity="false">
+            <AppenderRef ref="socket"/>
+        </Logger>
+    </Loggers>
+</Configuration>
