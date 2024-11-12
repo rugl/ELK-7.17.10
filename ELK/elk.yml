@@ -1,0 +1,82 @@
+version: '4.0'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    # image: elasticsearch:8.15.3
+    container_name: elasticsearch
+    environment:
+      # - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - elk
+    healthcheck:
+      # test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*green'"]
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.10
+    # image: logstash:8.15.3
+    container_name: logstash
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      # - xpack.monitoring.enabled=false
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      # - ./logstash.yml:/usr/share/logstash/config/logstash.yml
+    networks:
+      - elk
+    depends_on:
+      # - elasticsearch
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.10
+    # image: kibana:8.15.3
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - elk
+    depends_on:
+      #  - elasticsearch
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+
+networks:
+  elk:
+    external: true
+    name: dockerELK
+    # driver: dockerELK
+
+volumes:
+  elasticsearch_data:
+    driver: local
